@@ -414,7 +414,17 @@ async function fetchDomainIntelligence(detectedDomains, currentTabDomain) {
   }
 }
 
-function mapDomainIntelligenceToTrackers(domainIntelligence, fallbackDomains = []) {
+function findKnownTrackerForDomain(domain, knownTrackers = []) {
+  return (Array.isArray(knownTrackers) ? knownTrackers : []).find((tracker) => {
+    const known = normalizeDomain(tracker?.domain || '');
+    return known && (domain === known || domain.endsWith(`.${known}`));
+  }) || null;
+}
+
+// Build the tracker list shown to the user. Backend-resolved entities win;
+// domains the backend could not resolve keep whatever the content script
+// already identified, and only then fall back to the bare domain.
+function mapDomainIntelligenceToTrackers(domainIntelligence, fallbackDomains = [], knownTrackers = []) {
   if (Array.isArray(domainIntelligence?.trackers)) {
     return domainIntelligence.trackers;
   }
@@ -423,27 +433,39 @@ function mapDomainIntelligenceToTrackers(domainIntelligence, fallbackDomains = [
     ? domainIntelligence.resolved_trackers
     : [];
 
-  const mapped = resolved
-    .map((item) => {
-      const domain = normalizeDomain(item?.domain || '');
-      if (!domain) return null;
+  const byKey = new Map();
+  const resolvedDomains = new Set();
 
-      const categories = Array.isArray(item?.categories) ? item.categories : [];
-      const type = String(categories[0] || 'tracker').trim().toLowerCase() || 'tracker';
-      const name = String(item?.entity || item?.matched_domain || domain).trim() || domain;
+  resolved.forEach((item) => {
+    const domain = normalizeDomain(item?.domain || '');
+    if (!domain) return;
+    resolvedDomains.add(domain);
 
-      return { domain, type, name };
-    })
-    .filter(Boolean);
+    const categories = Array.isArray(item?.categories) ? item.categories : [];
+    const type = String(categories[0] || 'tracker').trim().toLowerCase() || 'tracker';
+    const name = String(item?.entity || item?.matched_domain || domain).trim() || domain;
+    // www.example.com and example.com resolve to the same entry: count once.
+    const key = normalizeDomain(item?.matched_domain || '') || domain;
+    if (!byKey.has(key)) byKey.set(key, { domain: key, type, name });
+  });
 
-  if (mapped.length) {
-    return mapped;
-  }
-
-  return (Array.isArray(fallbackDomains) ? fallbackDomains : [])
+  (Array.isArray(fallbackDomains) ? fallbackDomains : [])
     .map((d) => normalizeDomain(d))
-    .filter(Boolean)
-    .map((d) => ({ domain: d, type: 'unknown', name: d.split('.')[0] || d }));
+    .filter((d) => d && !resolvedDomains.has(d))
+    .forEach((domain) => {
+      const known = findKnownTrackerForDomain(domain, knownTrackers);
+      if (known) {
+        const key = normalizeDomain(known.domain);
+        if (!byKey.has(key)) {
+          byKey.set(key, { domain: key, type: known.type || 'tracker', name: known.name || key });
+        }
+        return;
+      }
+      const key = domain.replace(/^www\./, '');
+      if (!byKey.has(key)) byKey.set(key, { domain: key, type: 'third-party', name: key });
+    });
+
+  return Array.from(byKey.values());
 }
 
 function getOrCreateTrafficState(tabId, firstPartyDomain = '') {
@@ -648,7 +670,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       ? data.privacy.detectedDomains
       : detectedDomains;
     
-    // Default trackers if backend is unavailable
+    // Trackers the content script already identified from its own signatures.
+    const knownTrackers = Array.isArray(data.privacy?.trackers) ? data.privacy.trackers : [];
     let resolvedTrackers = [];
     
     fetchBackendJson('/analyze-domains', {
@@ -660,13 +683,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       timeoutMs: 7000,
     })
     .then(backendData => {
-      resolvedTrackers = mapDomainIntelligenceToTrackers(backendData, domainsToAnalyze);
+      resolvedTrackers = mapDomainIntelligenceToTrackers(backendData, domainsToAnalyze, knownTrackers);
       finishAnalysis(resolvedTrackers);
     })
     .catch(err => {
       console.warn('[ConsumerShield] Backend tracker resolution failed or timed out', err);
       // Fallback to extraction of basic domains if resolution fails
-      const fallbackTrackers = domainsToAnalyze.map(d => ({ domain: d, type: 'unknown', name: d.split('.')[0] }));
+      const fallbackTrackers = mapDomainIntelligenceToTrackers(null, domainsToAnalyze, knownTrackers);
       finishAnalysis(fallbackTrackers);
     });
 
