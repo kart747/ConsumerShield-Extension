@@ -765,6 +765,51 @@ def calc_manipulation_risk(data: ManipulationData) -> float:
     score = sum(weights.get(p.severity, 0.8) * p.confidence for p in data.patterns)
     return min(10.0, round(score, 1))
 
+
+def calc_dom_text_manipulation_score(dom_text: Optional[str]) -> float:
+    """Server-side heuristic scoring of raw screen text for manipulation signals.
+    Mirrors the Flutter-side _calculateLocalManipulationScore logic."""
+    if not dom_text:
+        return 0.0
+    lower = dom_text.lower()
+    score = 0.0
+
+    if "% off" in lower:
+        score += 3.0
+    if "limited time" in lower:
+        score += 3.0
+    if re.search(r"only\s+\S+\s+left", lower):
+        score += 3.0
+    if "hurry" in lower:
+        score += 2.0
+    if "recommended" in lower:
+        score += 2.0
+    if "sponsored" in lower:
+        score += 2.0
+    if "bestseller" in lower:
+        score += 1.5
+    if "deal of day" in lower or "deal of the day" in lower:
+        score += 1.5
+    if "flash sale" in lower:
+        score += 1.5
+    if "free delivery" in lower:
+        score += 1.0
+    # Additional server-side signals
+    if "act now" in lower:
+        score += 2.0
+    if "last chance" in lower:
+        score += 2.0
+    if "don't miss" in lower or "dont miss" in lower:
+        score += 1.5
+    if "selling fast" in lower:
+        score += 1.5
+    if "added to cart" in lower:
+        score += 1.0
+    if re.search(r"\d+\s*people\s*(are\s*)?(viewing|watching|looking)", lower):
+        score += 2.0
+
+    return min(10.0, round(score, 1))
+
 def get_risk_level(score: float) -> str:
     if score >= 8.5: return "CRITICAL"
     if score >= 6.5: return "HIGH"
@@ -2291,6 +2336,13 @@ async def analyze_complete(req: CompleteRequest, db: Session = Depends(get_db)):
 
     p_risk = calc_privacy_risk(req.privacy_data)
     m_risk = calc_manipulation_risk(req.manipulation_data)
+
+    # When Flutter sends raw screen text without structured patterns,
+    # compute a text-based manipulation score as fallback.
+    dom_text_score = calc_dom_text_manipulation_score(req.dom_text)
+    if m_risk == 0.0 and dom_text_score > 0.0:
+        m_risk = dom_text_score
+
     # Keep backend consistent with extension-side risk evaluation:
     # overall risk is the stronger of privacy/manipulation signals.
     o_risk = max(p_risk, m_risk)
