@@ -532,7 +532,7 @@ def predict_tracker_score(domain: str, radar_match: Optional[Dict[str, Any]], re
             if prevalence >= 0.005:
                 return 8.0
         categories = [str(cat).lower() for cat in radar_match.get("categories", [])]
-        if any(cat in {"advertising", "analytics", "tracker", "fingerprinting"} for cat in categories):
+        if any(cat in {"advertising", "analytics", "tracker", "fingerprinting", "session_replay", "data_broker", "social"} for cat in categories):
             return 8.0
         return 7.0
 
@@ -560,16 +560,6 @@ app = FastAPI(
     version="1.0.0",
     lifespan=app_lifespan,
 )
-
-# Load Tracker Radar
-radar_file = os.path.join(os.path.dirname(__file__), 'radar_lite.json')
-radar_lookup = {}
-if os.path.exists(radar_file):
-    with open(radar_file, 'r') as f:
-        radar_lookup = json.load(f)
-    print(f"[ConsumerShield] Loaded {len(radar_lookup)} tracker definitions from Radar Lite")
-else:
-    print("[ConsumerShield] Warning: radar_lite.json not found. Run radar_lite.py first.")
 
 app.add_middleware(
     CORSMiddleware,
@@ -2683,20 +2673,6 @@ def wall_of_shame(limit: Optional[int] = None, db: Session = Depends(get_db)):
 
 @app.post("/analyze-domains", response_model=AnalyzeDomainsResponse)
 async def analyze_domains(req: AnalyzeDomainsRequest):
-    # Temporary debug log for runtime validation of request shape.
-    payload_log = json.dumps(
-        {
-            "domains": req.domains,
-            "first_party_domain": req.first_party_domain,
-        },
-        default=str,
-    )
-    print(f"[ConsumerShield] analyze-domains request payload: {payload_log}")
-    logger.info(
-        "analyze-domains request payload: %s",
-        payload_log,
-    )
-
     first_party = normalize_domain(req.first_party_domain or "")
 
     unique_domains: List[str] = []

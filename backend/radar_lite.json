@@ -1,0 +1,437 @@
+{
+  "_comment": "Built-in table of well-known tracker domains. Replace with a fuller Tracker Radar export via RADAR_LITE_PATH if needed.",
+  "domains": {
+    "google-analytics.com": {
+      "entity": "Google Analytics",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "googletagmanager.com": {
+      "entity": "Google Tag Manager",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "analytics.google.com": {
+      "entity": "Google Analytics",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "doubleclick.net": {
+      "entity": "Google DoubleClick",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "googlesyndication.com": {
+      "entity": "Google AdSense",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "googleadservices.com": {
+      "entity": "Google Ads",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "googletagservices.com": {
+      "entity": "Google Publisher Tags",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "adservice.google.com": {
+      "entity": "Google Ads",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "facebook.net": {
+      "entity": "Meta Pixel",
+      "categories": [
+        "social"
+      ]
+    },
+    "facebook.com": {
+      "entity": "Meta (Facebook)",
+      "categories": [
+        "social"
+      ]
+    },
+    "connect.facebook.net": {
+      "entity": "Meta Pixel",
+      "categories": [
+        "social"
+      ]
+    },
+    "instagram.com": {
+      "entity": "Meta (Instagram)",
+      "categories": [
+        "social"
+      ]
+    },
+    "ads-twitter.com": {
+      "entity": "X (Twitter) Ads",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "platform.twitter.com": {
+      "entity": "X (Twitter)",
+      "categories": [
+        "social"
+      ]
+    },
+    "analytics.twitter.com": {
+      "entity": "X (Twitter) Analytics",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "t.co": {
+      "entity": "X (Twitter)",
+      "categories": [
+        "social"
+      ]
+    },
+    "linkedin.com": {
+      "entity": "LinkedIn Insight",
+      "categories": [
+        "social"
+      ]
+    },
+    "licdn.com": {
+      "entity": "LinkedIn",
+      "categories": [
+        "social"
+      ]
+    },
+    "snap.licdn.com": {
+      "entity": "LinkedIn Insight Tag",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "tiktok.com": {
+      "entity": "TikTok Pixel",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "analytics.tiktok.com": {
+      "entity": "TikTok Pixel",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "sc-static.net": {
+      "entity": "Snap Pixel",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "pinterest.com": {
+      "entity": "Pinterest Tag",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "pinimg.com": {
+      "entity": "Pinterest",
+      "categories": [
+        "social"
+      ]
+    },
+    "bing.com": {
+      "entity": "Microsoft Advertising",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "bat.bing.com": {
+      "entity": "Microsoft Advertising UET",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "clarity.ms": {
+      "entity": "Microsoft Clarity",
+      "categories": [
+        "session_replay"
+      ]
+    },
+    "hotjar.com": {
+      "entity": "Hotjar",
+      "categories": [
+        "session_replay"
+      ]
+    },
+    "hotjar.io": {
+      "entity": "Hotjar",
+      "categories": [
+        "session_replay"
+      ]
+    },
+    "fullstory.com": {
+      "entity": "FullStory",
+      "categories": [
+        "session_replay"
+      ]
+    },
+    "mouseflow.com": {
+      "entity": "Mouseflow",
+      "categories": [
+        "session_replay"
+      ]
+    },
+    "crazyegg.com": {
+      "entity": "Crazy Egg",
+      "categories": [
+        "session_replay"
+      ]
+    },
+    "mixpanel.com": {
+      "entity": "Mixpanel",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "amplitude.com": {
+      "entity": "Amplitude",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "segment.com": {
+      "entity": "Segment",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "segment.io": {
+      "entity": "Segment",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "heap.io": {
+      "entity": "Heap",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "heapanalytics.com": {
+      "entity": "Heap",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "newrelic.com": {
+      "entity": "New Relic",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "nr-data.net": {
+      "entity": "New Relic",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "optimizely.com": {
+      "entity": "Optimizely",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "branch.io": {
+      "entity": "Branch",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "app.link": {
+      "entity": "Branch",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "appsflyer.com": {
+      "entity": "AppsFlyer",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "adjust.com": {
+      "entity": "Adjust",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "clevertap.com": {
+      "entity": "CleverTap",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "clevertap-prod.com": {
+      "entity": "CleverTap",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "moengage.com": {
+      "entity": "MoEngage",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "webengage.com": {
+      "entity": "WebEngage",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "criteo.com": {
+      "entity": "Criteo",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "criteo.net": {
+      "entity": "Criteo",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "taboola.com": {
+      "entity": "Taboola",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "outbrain.com": {
+      "entity": "Outbrain",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "amazon-adsystem.com": {
+      "entity": "Amazon Ads",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "adnxs.com": {
+      "entity": "Xandr (AppNexus)",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "rubiconproject.com": {
+      "entity": "Magnite (Rubicon)",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "pubmatic.com": {
+      "entity": "PubMatic",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "openx.net": {
+      "entity": "OpenX",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "adsrvr.org": {
+      "entity": "The Trade Desk",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "casalemedia.com": {
+      "entity": "Index Exchange",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "media.net": {
+      "entity": "Media.net",
+      "categories": [
+        "advertising"
+      ]
+    },
+    "quantserve.com": {
+      "entity": "Quantcast",
+      "categories": [
+        "data_broker"
+      ]
+    },
+    "scorecardresearch.com": {
+      "entity": "Comscore",
+      "categories": [
+        "data_broker"
+      ]
+    },
+    "bluekai.com": {
+      "entity": "Oracle BlueKai",
+      "categories": [
+        "data_broker"
+      ]
+    },
+    "demdex.net": {
+      "entity": "Adobe Audience Manager",
+      "categories": [
+        "data_broker"
+      ]
+    },
+    "omtrdc.net": {
+      "entity": "Adobe Analytics",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "adobedtm.com": {
+      "entity": "Adobe Launch",
+      "categories": [
+        "analytics"
+      ]
+    },
+    "krxd.net": {
+      "entity": "Salesforce Krux",
+      "categories": [
+        "data_broker"
+      ]
+    },
+    "rlcdn.com": {
+      "entity": "LiveRamp",
+      "categories": [
+        "data_broker"
+      ]
+    },
+    "agkn.com": {
+      "entity": "Neustar",
+      "categories": [
+        "data_broker"
+      ]
+    },
+    "fingerprintjs.com": {
+      "entity": "FingerprintJS",
+      "categories": [
+        "fingerprinting"
+      ]
+    },
+    "fpjs.io": {
+      "entity": "FingerprintJS",
+      "categories": [
+        "fingerprinting"
+      ]
+    }
+  }
+}
