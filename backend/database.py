@@ -10,21 +10,28 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, Generator, List
 
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text, create_engine
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Integer, String, Text, Uuid, create_engine
+from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is required")
+# PostgreSQL is used when DATABASE_URL is set. Without it the backend falls
+# back to a local SQLite file so it can run with zero setup.
+_DEFAULT_SQLITE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "consumershield.db")
+DATABASE_URL = os.getenv("DATABASE_URL") or f"sqlite:///{_DEFAULT_SQLITE_PATH}"
 
-engine = create_engine(
-    DATABASE_URL,
-    pool_size=10,
-    max_overflow=20,
-    pool_pre_ping=True,
-    pool_timeout=30
-)
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(
+        DATABASE_URL,
+        pool_size=10,
+        max_overflow=20,
+        pool_pre_ping=True,
+        pool_timeout=30,
+    )
+
+# JSONB on PostgreSQL, plain JSON elsewhere.
+JSONB = JSON().with_variant(PG_JSONB(), "postgresql")
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, expire_on_commit=False)
 
 
@@ -35,7 +42,7 @@ class Base(DeclarativeBase):
 class ReportRecord(Base):
     __tablename__ = "reports"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     url = Column(Text, nullable=False)
     domain = Column(String(255), nullable=False, index=True)
 
