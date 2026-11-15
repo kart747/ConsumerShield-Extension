@@ -821,7 +821,7 @@ function renderOverview(analysis) {
       manipulationList.innerHTML = patterns.map((pattern) => {
         const severity = String(pattern.severity || 'low').toLowerCase();
         const normalizedSeverity = severity === 'high' ? 'high' : severity === 'medium' ? 'medium' : 'low';
-        const citation = getPatternCitation(pattern.type);
+        const citation = getPatternCitation(pattern);
         return `
           <div class="severity-card severity-${normalizedSeverity} report-card">
             <div class="severity-head">
@@ -915,20 +915,26 @@ function getSuspiciousKeywordTag(reasons) {
   return 'KEYWORD: HEURISTIC';
 }
 
-function getPatternCitation(type) {
+// Cite the law the detector attached to the pattern, so the popup, the
+// report and the complaint PDF all agree. The table is only a fallback.
+function getPatternCitation(pattern) {
+  const type = typeof pattern === 'string' ? pattern : pattern?.type;
+  const law = typeof pattern === 'object' && pattern ? String(pattern.law || '').trim() : '';
+  if (law) return `⚖️ Violation: ${law}.`;
+
   const citations = {
-    urgency: '⚖️ Violation: DPDP Act 2023 Sec. 6.',
-    sneaking: '⚖️ Violation: CCPA Dark Patterns Guidelines 2023.',
-    confirmshaming: '⚖️ Violation: Consumer Protection Act 2019 Sec. 2(47).',
-    trick_questions: '⚖️ Violation: CCPA Dark Patterns Guidelines 2023.',
-    forced_continuity: '⚖️ Violation: Consumer Protection Act 2019 Sec. 2(47).',
-    disguised_ads: '⚖️ Violation: CCPA Dark Patterns Guidelines 2023.',
-    misdirection: '⚖️ Violation: CCPA Dark Patterns Guidelines 2023.',
-    nagging: '⚖️ Violation: CCPA Dark Patterns Guidelines 2023.',
-    preselected: '⚖️ Violation: DPDP Act 2023 Sec. 6.',
-    obstruction: '⚖️ Violation: Consumer Protection Act 2019 Sec. 2(47).',
+    urgency: 'CCPA Dark Patterns Guidelines 2023 — False Urgency',
+    sneaking: 'CCPA Dark Patterns Guidelines 2023 — Drip Pricing',
+    confirmshaming: 'CCPA Dark Patterns Guidelines 2023 — Confirmshaming',
+    trick_questions: 'CCPA Dark Patterns Guidelines 2023 — Trick Questions',
+    forced_continuity: 'CCPA Dark Patterns Guidelines 2023 — Forced Continuity',
+    disguised_ads: 'CCPA Dark Patterns Guidelines 2023 — Disguised Ads',
+    misdirection: 'CCPA Dark Patterns Guidelines 2023 — Misdirection',
+    nagging: 'CCPA Dark Patterns Guidelines 2023 — Nagging',
+    preselected: 'CCPA Dark Patterns Guidelines 2023 — Pre-selected Options',
+    obstruction: 'CCPA Dark Patterns Guidelines 2023 — Obstruction',
   };
-  return citations[type] || '⚖️ Violation: Consumer Protection Act 2019 Sec. 2(47).';
+  return `⚖️ Violation: ${citations[type] || 'Consumer Protection Act 2019 Sec. 2(47)'}.`;
 }
 
 function setScore(type, score, level) {
@@ -1424,7 +1430,7 @@ function buildReportHTML(analysis) {
           <span class="severity-chip severity-${severityKey}">${escHtml(severityKey)}</span>
         </div>
         <p>${escHtml(item.description || 'Manipulative behavior detected.')}</p>
-        <div class="citation">${escHtml(getPatternCitation(item.type))}</div>
+        <div class="citation">${escHtml(getPatternCitation(item))}</div>
       </article>
     `;
   }).join('');
