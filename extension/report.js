@@ -1,30 +1,28 @@
+// Empty until a real scan is loaded from storage. No demo data: a report page
+// that shows made-up findings for a site the user never scanned is misleading.
 let REPORT = {
-  site: "flipkart.com",
-  timestamp: "2026-03-13 · 20:14:33 IST",
-  securityScore: 3,
-  darkPatterns: [
-    { id: 1, type: "False Urgency", description: "Countdown timer displayed on product pages with no real deadline. Resets on page reload, artificially pressuring users into immediate purchases.", severity: "critical", dpdpRef: "Section 7(b)" },
-    { id: 2, type: "Hidden Subscription", description: "Flipkart Plus membership silently pre-selected during checkout flow. Opt-out is buried two screens deep in account settings.", severity: "high", dpdpRef: "Section 6(1)" },
-    { id: 3, type: "Confirm-shaming", description: "Decline button reads 'No, I don't want savings' — designed to invoke shame and override rational decision-making.", severity: "medium", dpdpRef: "Section 7(a)" },
-    { id: 4, type: "Roach Motel", description: "Account sign-up is frictionless. Account deletion requires email verification, OTP, 7-day waiting period, and manual review.", severity: "critical", dpdpRef: "Section 12(3)" },
-  ],
-  trackers: [
-    { name: "Google Analytics (GA4)", category: "Behavioral Analytics", risk: "high", requests: 47 },
-    { name: "Meta Pixel", category: "Cross-site Tracking", risk: "critical", requests: 31 },
-    { name: "Hotjar Session Recording", category: "Session Replay", risk: "high", requests: 18 },
-    { name: "Criteo Ad Retargeting", category: "Ad Targeting", risk: "medium", requests: 12 },
-    { name: "DoubleClick (Google)", category: "Ad Profiling", risk: "medium", requests: 9 },
-  ],
-  aiAnalysis: "Our analysis of flipkart.com reveals a systemic deployment of behaviorally-informed dark patterns engineered to suppress informed consent and inflate conversion metrics at the user's expense. The false urgency mechanisms exploit temporal discounting biases — a well-documented cognitive vulnerability — to manufacture perceived scarcity where none exists. The pre-selected membership enrollment violates the foundational principle of granular, uninstructed consent as codified in the DPDP Act 2023. Critically, the asymmetry between account creation (3 steps) and deletion (11 steps) constitutes a structural barrier to data erasure rights. Cross-site tracking via Meta Pixel and Google Analytics creates persistent behavioral profiles without explicit disclosure at the point of collection, exposing the platform to significant regulatory liability under DPDP Schedule I.",
-  legalMappings: [
-    { section: "Section 6(1)", title: "Consent Requirements", description: "Pre-selected checkboxes for Flipkart Plus constitute implied rather than explicit consent.", risk: "violation" },
-    { section: "Section 7(a)", title: "Purpose Limitation", description: "Session recordings via Hotjar collected beyond declared purpose of 'performance analytics.'", risk: "violation" },
-    { section: "Section 7(b)", title: "Data Minimisation", description: "47 GA4 requests per session suggests excessive telemetry collection beyond stated need.", risk: "risk" },
-    { section: "Section 12(3)", title: "Right to Erasure", description: "Multi-step deletion process with mandatory 7-day delay potentially contravenes timely erasure obligations.", risk: "violation" },
-    { section: "Section 16", title: "Significant Data Fiduciary", description: "Volume and sensitivity of data processed may trigger enhanced obligations under Schedule I.", risk: "risk" },
-  ],
+  site: 'No scan loaded',
+  timestamp: '—',
+  securityScore: 0,
+  darkPatterns: [],
+  trackers: [],
+  aiAnalysis: 'No scan data yet. Open a website, click the ConsumerShield icon, then choose "View Full Report".',
+  legalMappings: [],
+  totalRequests: 0,
   wallOfShame: [],
 };
+let HAS_SCAN = false;
+
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+  ));
+}
+
+function emptyState(message) {
+  return `<div class="empty-state" style="padding:18px;color:#8A9BB0;font-size:13px;border:1px dashed rgba(138,155,176,.3)">${esc(message)}</div>`;
+}
+
 let LAST_ANALYSIS = null;
 
 const BACKEND_BASE_URLS = [
@@ -102,12 +100,17 @@ function toReportShape(analysis) {
   const legalMappings = Array.isArray(analysis.regulatoryViolations)
     ? analysis.regulatoryViolations.map((item, index) => {
         const section = item.section || item.law || item.regulation || `Section ${index + 1}`;
-        const title = item.title || item.violation || item.pattern || 'Potential compliance issue';
-        const description = item.description || item.penalty || item.reason || 'Flagged during analysis.';
-        const risk = /violation|illegal|non[-\s]?compliance/i.test(`${title} ${description}`) ? 'violation' : 'risk';
-        return { section, title, description, risk };
+        const title = item.issue || item.title || item.violation || item.pattern || 'Potential compliance issue';
+        const description = [
+          item.law,
+          item.penalty ? `Penalty: ${item.penalty}` : '',
+          item.authority ? `Authority: ${item.authority}` : '',
+        ].filter(Boolean).join(' · ') || item.description || 'Flagged during analysis.';
+        return { section, title, description, risk: 'violation' };
       })
     : [];
+
+  const totalRequests = Number(analysis?.network_activity?.total_request_count || 0);
 
   const securityScoreRaw = Number(overall.riskScore);
   const fallbackRisk = Math.max(Number(privacy.riskScore || 0), Number(manipulation.riskScore || 0));
@@ -122,6 +125,7 @@ function toReportShape(analysis) {
     trackers,
     aiAnalysis: analysis.aiInsight || overall.insight || 'Live analysis completed. Review findings below.',
     legalMappings,
+    totalRequests,
   };
 }
 
@@ -138,6 +142,7 @@ async function hydrateReportFromStorage() {
   LAST_ANALYSIS = storedAnalysis;
   if (mapped) {
     REPORT = mapped;
+    HAS_SCAN = true;
   }
 }
 
@@ -170,8 +175,8 @@ function buildStats() {
     { label: 'Security Score', val: `${REPORT.securityScore}/10`, sub: 'Overall risk rating', color: '#FF003C' },
     { label: 'Dark Patterns', val: REPORT.darkPatterns.length, sub: 'Manipulative elements found', color: '#FF003C' },
     { label: 'Active Trackers', val: REPORT.trackers.length, sub: 'Third-party surveillance', color: '#FF6B00' },
-    { label: 'Legal Violations', val: REPORT.legalMappings.filter((mapping) => mapping.risk === 'violation').length, sub: 'DPDP Act breaches', color: '#FF003C' },
-    { label: 'Total Requests', val: REPORT.trackers.reduce((count, tracker) => count + tracker.requests, 0), sub: 'Tracker network calls', color: '#F5E642' },
+    { label: 'Legal Violations', val: REPORT.legalMappings.filter((mapping) => mapping.risk === 'violation').length, sub: 'DPDP Act / CCPA guideline breaches', color: '#FF003C' },
+    { label: 'Total Requests', val: REPORT.totalRequests || REPORT.trackers.reduce((count, tracker) => count + tracker.requests, 0), sub: 'Third-party network calls', color: '#F5E642' },
   ];
 
   const grid = document.getElementById('stat-grid');
@@ -191,6 +196,10 @@ function buildStats() {
 
 function buildDarkPatterns() {
   const grid = document.getElementById('dark-pattern-grid');
+  if (!REPORT.darkPatterns.length) {
+    grid.innerHTML = emptyState(HAS_SCAN ? 'No dark patterns were detected on this page.' : 'No scan loaded.');
+    return;
+  }
   REPORT.darkPatterns.forEach((pattern, index) => {
     const cfg = sevConfig(pattern.severity);
     const card = document.createElement('div');
@@ -205,13 +214,13 @@ function buildDarkPatterns() {
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="${cfg.color}" stroke-width="1.5" stroke-linecap="round"/></svg>
           </div>
           <div>
-            <div class="dp-type">${pattern.type}</div>
-            <div class="dp-dpdp">/// ${pattern.dpdpRef}</div>
+            <div class="dp-type">${esc(pattern.type)}</div>
+            <div class="dp-dpdp">/// ${esc(pattern.dpdpRef)}</div>
           </div>
         </div>
         <span class="severity-badge" style="color:${cfg.color};border-color:${cfg.color}66;background:${cfg.color}0F">${cfg.label}</span>
       </div>
-      <p class="dp-desc" style="color:#9AAABB">${pattern.description}</p>
+      <p class="dp-desc" style="color:#9AAABB">${esc(pattern.description)}</p>
       <div class="dp-bottom-line" style="background:${cfg.color}"></div>`;
     card.innerHTML = inner;
     grid.appendChild(card);
@@ -220,6 +229,10 @@ function buildDarkPatterns() {
 
 function buildTrackers() {
   const rows = document.getElementById('tracker-rows');
+  if (!REPORT.trackers.length) {
+    rows.innerHTML = emptyState(HAS_SCAN ? 'No third-party trackers were detected on this page.' : 'No scan loaded.');
+    return;
+  }
   const maxReq = Math.max(1, ...REPORT.trackers.map((tracker) => tracker.requests));
   REPORT.trackers.forEach((tracker, index) => {
     const cfg = riskConfig(tracker.risk);
@@ -229,37 +242,52 @@ function buildTrackers() {
     row.style.transitionDelay = `${index * 0.08}s`;
     row.innerHTML = `
       <div>
-        <div class="tracker-name">${tracker.name}</div>
+        <div class="tracker-name">${esc(tracker.name)}</div>
         <div class="tracker-cat-row">
-          <span class="tracker-cat">/// ${tracker.category}</span>
+          <span class="tracker-cat">/// ${esc(tracker.category)}</span>
           <div class="tracker-bar-track"><div class="tracker-bar-fill" style="background:${cfg.color}" data-w="${pct}"></div></div>
         </div>
       </div>
       <div class="tracker-req">${tracker.requests}<span> req</span></div>
-      <span class="risk-badge" style="color:${cfg.color};border-color:${cfg.color}66;background:${cfg.bg}">${tracker.risk.toUpperCase()}</span>`;
+      <span class="risk-badge" style="color:${cfg.color};border-color:${cfg.color}66;background:${cfg.bg}">${esc(tracker.risk.toUpperCase())}</span>`;
     rows.appendChild(row);
   });
 }
 
 function buildAI() {
   document.getElementById('ai-text').textContent = REPORT.aiAnalysis;
-  const findings = [
-    { label: 'Deceptive UX patterns targeting loss aversion', score: 'CONFIRMED', color: '#FF003C' },
-    { label: 'Consent mechanisms fail DPDP Act standards', score: 'VIOLATION', color: '#FF003C' },
-    { label: 'Asymmetric account creation / deletion flow', score: 'CRITICAL', color: '#FF6B00' },
-    { label: 'Cross-site tracking without point-of-collection notice', score: 'HIGH RISK', color: '#FF6B00' },
-  ];
+  // Findings are derived from the scan itself, never hardcoded.
+  const findings = [];
+  const countBySeverity = (sev) => REPORT.darkPatterns.filter((p) => p.severity === sev).length;
+  const severe = countBySeverity('critical') + countBySeverity('high');
+  const violations = REPORT.legalMappings.filter((m) => m.risk === 'violation').length;
+  if (REPORT.darkPatterns.length) {
+    findings.push({ label: `${REPORT.darkPatterns.length} manipulative design pattern(s) on this page`, score: severe ? 'HIGH RISK' : 'FLAGGED', color: severe ? '#FF003C' : '#F5E642' });
+  }
+  if (REPORT.trackers.length) {
+    findings.push({ label: `${REPORT.trackers.length} third-party tracker(s) loaded`, score: REPORT.trackers.length >= 5 ? 'HIGH RISK' : 'FLAGGED', color: REPORT.trackers.length >= 5 ? '#FF6B00' : '#F5E642' });
+  }
+  if (violations) {
+    findings.push({ label: `${violations} potential legal violation(s) mapped`, score: 'VIOLATION', color: '#FF003C' });
+  }
+  if (HAS_SCAN && !findings.length) {
+    findings.push({ label: 'No dark patterns, trackers or violations found', score: 'CLEAR', color: '#39FF14' });
+  }
   const grid = document.getElementById('ai-findings');
   findings.forEach((finding) => {
     const el = document.createElement('div');
     el.className = 'ai-finding';
-    el.innerHTML = `<span class="ai-finding-label">${finding.label}</span><span class="ai-finding-score" style="color:${finding.color}">${finding.score}</span>`;
+    el.innerHTML = `<span class="ai-finding-label">${esc(finding.label)}</span><span class="ai-finding-score" style="color:${finding.color}">${esc(finding.score)}</span>`;
     grid.appendChild(el);
   });
 }
 
 function buildLegal() {
   const list = document.getElementById('legal-list');
+  if (!REPORT.legalMappings.length) {
+    list.innerHTML = emptyState(HAS_SCAN ? 'No legal violations were mapped for this page.' : 'No scan loaded.');
+    return;
+  }
   REPORT.legalMappings.forEach((mapping, index) => {
     const isViolation = mapping.risk === 'violation';
     const color = isViolation ? '#FF003C' : '#00F0FF';
@@ -274,11 +302,11 @@ function buildLegal() {
         <div class="legal-icon" style="background:${color}10;border-color:${color}2A">${iconSvg}</div>
         <div class="legal-meta">
           <div class="legal-tags">
-            <span class="legal-section-label" style="color:${color}">${mapping.section}</span>
+            <span class="legal-section-label" style="color:${color}">${esc(mapping.section)}</span>
             <span class="legal-tag" style="color:${color};border-color:${color}44;background:${color}0F">${isViolation ? 'VIOLATION' : 'RISK FLAG'}</span>
           </div>
-          <div class="legal-title" style="color:#EDF0F5">${mapping.title}</div>
-          <p class="legal-desc" style="color:#8A9BB0">${mapping.description}</p>
+          <div class="legal-title" style="color:#EDF0F5">${esc(mapping.title)}</div>
+          <p class="legal-desc" style="color:#8A9BB0">${esc(mapping.description)}</p>
         </div>
       </div>`;
     list.appendChild(card);
