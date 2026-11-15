@@ -508,7 +508,7 @@ async function buildWallOfShame() {
   if (!grid || !list) return;
 
   grid.innerHTML = '';
-  list.innerHTML = '<div class="shame-row" style="grid-template-columns:1fr">Loading wall of shame data...</div>';
+  list.innerHTML = '<div class="shame-row visible" style="grid-template-columns:1fr">Loading wall of shame data...</div>';
 
   let wallData = [];
   try {
@@ -519,7 +519,7 @@ async function buildWallOfShame() {
       .sort((a, b) => b.riskScore - a.riskScore);
   } catch (error) {
     console.warn('[ConsumerShield] Failed to load /wall-of-shame', error);
-    list.innerHTML = '<div class="shame-row" style="grid-template-columns:1fr">Unable to load wall data from backend.</div>';
+    list.innerHTML = '<div class="shame-row visible" style="grid-template-columns:1fr">Unable to load wall data from backend.</div>';
     return;
   }
 
@@ -528,7 +528,7 @@ async function buildWallOfShame() {
   list.innerHTML = '';
 
   if (!wallData.length) {
-    list.innerHTML = '<div class="shame-row" style="grid-template-columns:1fr">No reports with risk score >= 7 yet.</div>';
+    list.innerHTML = '<div class="shame-row visible" style="grid-template-columns:1fr">No reports with risk score >= 7 yet.</div>';
     return;
   }
 
@@ -545,13 +545,13 @@ async function buildWallOfShame() {
     card.innerHTML = `
       <div class="top-five-rank">${index + 1}</div>
       <div class="top-five-content">
-        <a href="${site.href}" target="_blank" class="top-five-url">${site.url}</a>
+        <a href="${esc(site.href)}" target="_blank" rel="noopener noreferrer" class="top-five-url">${esc(site.url)}</a>
         <div class="top-five-meta">
           <div class="top-five-score">${site.riskScore.toFixed(1)}</div>
-          <div class="top-five-reports">${site.timestamp}</div>
+          <div class="top-five-reports">${esc(site.timestamp)}</div>
         </div>
-        <div class="top-five-patterns">${site.darkPatterns.map((pattern) => `<span class="pattern-tag">${pattern}</span>`).join('')}</div>
-          <div class="top-five-reports">${chainLabel}</div>
+        <div class="top-five-patterns">${site.darkPatterns.map((pattern) => `<span class="pattern-tag">${esc(pattern)}</span>`).join('')}</div>
+          <div class="top-five-reports">${esc(chainLabel)}</div>
       </div>`;
     grid.appendChild(card);
   });
@@ -561,19 +561,24 @@ async function buildWallOfShame() {
     row.className = 'shame-row';
     row.style.transitionDelay = `${index * 0.04}s`;
     const txCellMain = site.blockchainTxHash
-      ? `<a href="https://sepolia.etherscan.io/tx/${site.blockchainTxHash}" target="_blank">${shortTxHash(site.blockchainTxHash)}</a>`
+      ? `<a href="https://sepolia.etherscan.io/tx/${encodeURIComponent(site.blockchainTxHash)}" target="_blank" rel="noopener noreferrer">${esc(shortTxHash(site.blockchainTxHash))}</a>`
       : (site.blockchainProof ? 'anchored' : 'pending');
     const contractLine = site.contractAddress
-      ? `<div style="margin-top:4px;font-size:11px;opacity:.78"><a href="https://sepolia.etherscan.io/address/${site.contractAddress}" target="_blank">contract ${shortAddress(site.contractAddress)}</a></div>`
+      ? `<div style="margin-top:4px;font-size:11px;opacity:.78"><a href="https://sepolia.etherscan.io/address/${encodeURIComponent(site.contractAddress)}" target="_blank" rel="noopener noreferrer">contract ${esc(shortAddress(site.contractAddress))}</a></div>`
       : '';
     row.innerHTML = `
-      <a href="${site.href}" target="_blank" class="shame-url">${site.url}</a>
+      <a href="${esc(site.href)}" target="_blank" rel="noopener noreferrer" class="shame-url">${esc(site.url)}</a>
       <div class="shame-score">${site.riskScore.toFixed(1)}</div>
-      <div class="shame-patterns">${site.darkPatterns.map((pattern) => `<span class="shame-pattern-tag">${pattern}</span>`).join('')}</div>
-      <div class="shame-date">${site.timestamp}</div>
+      <div class="shame-patterns">${site.darkPatterns.map((pattern) => `<span class="shame-pattern-tag">${esc(pattern)}</span>`).join('')}</div>
+      <div class="shame-date">${esc(site.timestamp)}</div>
       <div class="shame-tx">${txCellMain}${contractLine}</div>`;
     list.appendChild(row);
   });
+
+  // The wall is rebuilt on every poll, so the new cards and rows have to be
+  // registered for the reveal animation again or they stay invisible.
+  observeReveal(grid.querySelectorAll('.top-five-card'));
+  observeReveal(list.querySelectorAll('.shame-row'));
 }
 
 function initGauge() {
@@ -632,16 +637,25 @@ function initGauge() {
   requestAnimationFrame(tick);
 }
 
+let REVEAL_OBSERVER = null;
+
+function observeReveal(elements) {
+  if (!REVEAL_OBSERVER) return; // initScrollReveal picks up everything rendered before it runs
+  elements.forEach((el) => {
+    if (!el.classList.contains('visible')) REVEAL_OBSERVER.observe(el);
+  });
+}
+
 function initScrollReveal() {
-  const obs = new IntersectionObserver((entries) => {
+  REVEAL_OBSERVER = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
         entry.target.classList.add('visible');
-        obs.unobserve(entry.target);
+        REVEAL_OBSERVER.unobserve(entry.target);
       }
     });
   }, { threshold: 0.06 });
-  document.querySelectorAll('.content-section,.dp-card,.tracker-row,.legal-card,.top-five-card,.shame-row').forEach((el) => obs.observe(el));
+  observeReveal(document.querySelectorAll('.content-section,.dp-card,.tracker-row,.legal-card,.top-five-card,.shame-row'));
 
   const barObs = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
@@ -726,6 +740,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await hydrateReportFromStorage();
   await persistCurrentReportToBackend();
   document.getElementById('meta-site').textContent = REPORT.site;
+  const statusNode = document.getElementById('analysis-status');
+  if (statusNode) statusNode.textContent = HAS_SCAN ? 'Analysis Complete' : 'No scan loaded';
   document.getElementById('meta-time').textContent = REPORT.timestamp;
   buildStats();
   buildDarkPatterns();
