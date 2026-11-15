@@ -18,8 +18,25 @@ const F_SMALL   =  9;
 const leading = (sz) => Math.round(sz * 1.55);
 
 // ─── ASCII safety ─────────────────────────────────────────────────────────────
+// The built-in PDF fonts are ASCII-only. Transliterate the punctuation and
+// currency symbols that show up in legal text before dropping anything else,
+// so "Guidelines 2023 — False Urgency" does not become "2023 ? False Urgency".
+const ASCII_REPLACEMENTS = [
+  [/[\u2013\u2014\u2212]/g, '-'],
+  [/[\u2018\u2019\u02BC]/g, "'"],
+  [/[\u201C\u201D]/g, '"'],
+  [/\u2026/g, '...'],
+  [/[\u2022\u00B7]/g, '-'],
+  [/\u20B9\s*/g, 'Rs. '],
+  [/\u00A0/g, ' '],
+];
+
 function a(v) {
-  return String(v ?? '').replace(/[^\x20-\x7E]/g, '?');
+  let text = String(v ?? '');
+  ASCII_REPLACEMENTS.forEach(([pattern, replacement]) => {
+    text = text.replace(pattern, replacement);
+  });
+  return text.replace(/[^\x20-\x7E]/g, '').replace(/ {2,}/g, ' ');
 }
 
 function esc(v) {
