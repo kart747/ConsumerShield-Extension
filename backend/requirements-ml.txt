@@ -1,0 +1,13 @@
+# Optional: local models (ENABLE_LOCAL_NLP=1, ENABLE_QWEN_VL=1) and train.py.
+-r requirements.txt
+torch>=2.6.0
+transformers>=4.36.0
+peft>=0.4.0
+accelerate>=0.24.0
+bitsandbytes>=0.41.0
+optimum>=1.14.0
+qwen-vl-utils>=0.0.1
+pillow>=10.0.0
+scikit-learn>=1.3.0
+pandas>=2.0.0
+numpy>=1.24.0
