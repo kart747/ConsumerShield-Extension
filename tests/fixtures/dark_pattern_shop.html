@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><title>MegaShop - Deals</title></head><body>
+<h1>Wireless Headphones</h1>
+<p class="price">₹1,999 <s>₹4,999</s> 60% off</p>
+<p>Hurry! Only 2 left in stock. 37 people are viewing this right now.</p>
+<p>Flash sale ends in <span id="timer">00:04:59</span></p>
+<label><input type="checkbox" checked> Add 1-year protection plan for ₹299</label>
+<label><input type="checkbox" checked> Subscribe to our newsletter and partner offers</label>
+<button id="buy" style="background:#0a0;color:#fff;font-size:20px">Buy now</button>
+<a href="#" style="color:#ccc;font-size:9px">No thanks, I don't like saving money</a>
+<p>Convenience fee and handling charges added at checkout.</p>
+<p>Free trial auto-renews at ₹999/month. To cancel, call our support line.</p>
+<!-- The e2e test intercepts these two requests, so no real tracker is ever contacted. -->
+<script src="https://www.google-analytics.com/analytics.js" async></script>
+<script src="https://connect.facebook.net/en_US/fbevents.js" async></script>
+<script>setInterval(()=>{const t=document.getElementById('timer');t.textContent='00:04:'+String(Math.floor(Math.random()*59)).padStart(2,'0')},1000)</script>
+</body></html>

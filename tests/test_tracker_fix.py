@@ -13,7 +13,7 @@ async def test_tracker_detection():
     print("Testing Tracker Detection Fix on Flipkart")
     print("="*80 + "\n")
     
-    ext_path = Path("/home/kart/Desktop/hackathon/ConsumerShield-Backup-/consumershield/extension")
+    ext_path = Path(__file__).resolve().parent.parent / "extension"
     
     async with async_playwright() as p:
         context = await p.chromium.launch_persistent_context(

@@ -17,9 +17,9 @@ import requests
 from playwright.async_api import async_playwright, Browser, BrowserContext
 
 # Configuration
-EXTENSION_PATH = "/home/kart/Desktop/hackathon/ConsumerShield-Backup-/consumershield/extension"
+EXTENSION_PATH = str(Path(__file__).resolve().parent.parent / "extension")
 BACKEND_URL = "http://localhost:8000"
-OUTPUT_DIR = "/home/kart/Desktop/hackathon"
+OUTPUT_DIR = str(Path(__file__).resolve().parent.parent / "docs")
 REPORT_FILE = os.path.join(OUTPUT_DIR, "test_report.md")
 
 # Target sites to test

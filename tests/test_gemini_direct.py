@@ -1,7 +1,7 @@
 """Direct Gemini API diagnostic for ConsumerShield backend.
 
 Usage:
-  /home/kart/Desktop/hackathon/.venv/bin/python test_gemini_direct.py
+  python tests/test_gemini_direct.py
 """
 
 import json

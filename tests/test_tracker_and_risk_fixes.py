@@ -18,7 +18,7 @@ async def run_test():
     print("="*80 + "\n")
 
     # Get extension path
-    ext_path = Path("/home/kart/Desktop/hackathon/ConsumerShield-Backup-/consumershield/extension")
+    ext_path = Path(__file__).resolve().parent.parent / "extension"
     
     # Launch Chromium with extension
     print("[1/3] Launching Chromium with ConsumerShield extension...")
@@ -91,7 +91,7 @@ async def run_test():
     print("\n[3/3] Running local analysis verification...")
     
     # Use the existing test_extension.py AnalysisEngine to verify
-    sys.path.insert(0, '/home/kart/Desktop/hackathon')
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from test_extension import AnalysisEngine
     
     # For now, let's create a simpler test that verifies the formula
