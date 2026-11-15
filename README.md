@@ -1,161 +1,80 @@
-# ConsumerShield - Repository Structure
+# ConsumerShield Extension
 
-This repository contains a browser extension (`extension/`) and backend service (`backend/`) for detecting and preventing dark patterns and privacy violations online.
+A Chrome extension that flags dark patterns and third-party trackers on the page you are on, maps them to Indian consumer law, and generates a complaint you can file.
 
-## 📁 Repository Organization
+It checks pages against the CCPA Dark Patterns Guidelines 2023, the DPDP Act 2023 and the Consumer Protection Act 2019.
+
+The Android app lives in [ConsumerShield-App](https://github.com/kart747/ConsumerShield-App) and uses the backend in this repo.
+
+## What it does
+
+- **Dark patterns:** false urgency, drip pricing, confirmshaming, forced continuity, obstruction, pre-selected add-ons, nagging, trick wording, disguised ads, misdirection.
+- **Trackers:** watches third-party requests and names the company behind each domain.
+- **Risk scores:** a privacy score and a manipulation score out of 10 for every page.
+- **Complaint PDF:** a ready-to-file report with the evidence and the law each pattern breaks.
+- **Full report and wall of shame:** a detailed report page, plus the highest-risk sites seen so far.
+- **Evidence anchoring (optional):** stores a hash of each report on Ethereum Sepolia.
+
+## Layout
 
 ```
-consumershield/
-├── backend/                    # FastAPI backend server
-│   ├── main.py                # Entry point for the API server
-│   ├── database.py            # Database models and queries
-│   ├── regulatory_database.py # Regulatory data management
-│   ├── ethereum_anchor.py     # Blockchain evidence anchoring
-│   ├── requirements.txt       # Python dependencies
-│   ├── consumershield.db      # SQLite database (generated at runtime)
-│   └── .env                   # Environment variables (not in repo)
-│
-├── extension/                  # Chrome/Chromium browser extension
-│   ├── manifest.json          # Extension configuration
-│   ├── background.js          # Service worker for extension
-│   ├── content.js             # Content script for page analysis
-│   ├── popup.html/js/css      # Extension popup UI
-│   ├── report.html/js         # Detailed risk report
-│   ├── dual-risk-calculator.js# Risk scoring engine
-│   └── icons/                 # Extension icons
-│
-├── docs/                       # Documentation and guides
-│   ├── README.md              # Project overview
-│   ├── TESTING_CHECKLIST.md   # Test cases and verification
-│   ├── BEFORE_AFTER_COMPARISON.md
-│   └── *.md                   # Other documentation
-│
-├── tests/                      # Test scripts
-│   ├── test_api.py            # API endpoint tests
-│   ├── test_gemini_direct.py  # AI model tests
-│   ├── run_test.sh            # Test runner script
-│   └── *.py                   # Other test files
-│
-├── .venv/                      # Python virtual environment
-├── .vscode/                    # VS Code workspace settings
-├── .gitignore                  # Git ignore rules
-└── README.md                   # This file
+extension/   Chrome extension (Manifest V3): content script, service worker, popup, report page
+backend/     FastAPI service: risk scoring, law mapping, tracker lookup, report storage
+tests/       End-to-end test that loads the real extension, plus older scripts
+docs/        Design notes from the hackathon
+train.py     LoRA fine-tuning script for the dark-pattern classifier
+consumershield-roberta-final/        fine-tuned adapter the backend loads
+consumershield-roberta-base-final/   later RoBERTa-base training run
 ```
 
-## 🚀 Quick Start
+## Run it
 
-### Backend Setup
+### 1. Backend
 
 ```bash
-# Create and activate virtual environment
-python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r backend/requirements.txt
 cd backend
-pip install -r requirements.txt
-
-# Configure environment
-cp .env.example .env  # Create from template (if exists)
-# Edit .env with your credentials:
-# - OPENAI_API_KEY (optional, for AI insights)
-# - RPC_URL (optional, for blockchain anchoring)
-# - PRIVATE_KEY (optional, for blockchain anchoring)
-
-# Start backend server
-uvicorn main:app --reload --port 8000
-# API docs: http://localhost:8000/docs
+uvicorn main:app --port 8000
 ```
 
-### Extension Setup
+That is enough: with no configuration it stores reports in a local SQLite file and uses rule-based analysis. API docs are at http://localhost:8000/docs.
 
-1. Open Chrome → go to `chrome://extensions/`
-2. Enable **Developer mode** (top-right toggle)
-3. Click **Load unpacked**
-4. Select the `extension/` folder
-5. The 🛡️ ConsumerShield icon appears in your toolbar
+Optional settings go in `backend/.env` (see `backend/.env.example`):
 
-## 🧪 Testing
+| Setting | What it adds |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL instead of SQLite |
+| `GEMINI_API_KEY` | Gemini-written insights |
+| `ENABLE_LOCAL_NLP=1` | the fine-tuned RoBERTa classifier (needs `backend/requirements-ml.txt`) |
+| `ENABLE_QWEN_VL=1` | Qwen2.5-VL screenshot analysis (needs a GPU with about 8 GB) |
+| `RPC_URL`, `PRIVATE_KEY`, `CONTRACT_ADDRESS` | Ethereum evidence anchoring |
 
-Run tests from the project root:
+### 2. Extension
+
+1. Open `chrome://extensions` and turn on **Developer mode**.
+2. Click **Load unpacked** and pick the `extension/` folder.
+3. Visit a shopping site and click the ConsumerShield icon.
+
+The extension looks for the backend on ports 8012 and 8000 of localhost. It still detects patterns and trackers without the backend, but law mapping and saved reports need it.
+
+## Test
 
 ```bash
-# Run backend tests
-bash tests/run_test.sh
-
-# Run API tests
-python tests/test_api.py
-
-# Run AI model tests
-python tests/test_gemini_direct.py
-
-# Run extension tests
-python tests/test_extension.py
+pip install -r backend/requirements.txt -r tests/requirements.txt
+playwright install chromium
+python tests/test_extension_e2e.py
 ```
 
-## 📋 Key Features
+The test starts its own backend and a local page full of dark patterns, loads the real extension in headless Chromium, and checks the scan, the popup, the complaint PDF and the full report. It needs no network access.
 
-- ✅ Detects dark patterns (trick questions, disguised ads, sneaking, forced actions, etc.)
-- ✅ Tracks privacy violations and regulatory compliance
-- ✅ Real-time risk scoring and reporting
-- ✅ Blockchain evidence anchoring (optional)
-- ✅ Works fully offline (backend optional for AI insights)
-- ✅ Enforces: DPDP Act 2023, CCPA Guidelines 2023, Consumer Protection Act 2019
+## How detection works
 
-## 📚 Documentation
+1. The content script scans the page text and DOM with rules for each pattern type, and lists third-party domains.
+2. The service worker sends the findings to the backend.
+3. The backend scores the risk, resolves tracker domains against `backend/radar_lite.json`, and maps each finding to a law, a penalty and an authority.
+4. If enabled, the RoBERTa classifier, Qwen2.5-VL and Gemini add a second opinion on borderline findings.
 
-See the `docs/` folder for:
-- `README.md` - Project overview and detailed features
-- `TESTING_CHECKLIST.md` - Test cases and verification procedures
-- Migration and analysis documents
+## Team
 
-## ⚙️ Dependencies
-
-**Backend:**
-- FastAPI (Python web framework)
-- SQLite (database)
-- Python 3.8+
-
-**Extension:**
-- Chrome/Chromium browser (Manifest v3)
-- JavaScript (ES6+)
-
-## 🔐 Environment Variables
-
-Create a `.env` file in the `backend/` folder:
-
-```env
-# AI Integration (optional)
-OPENAI_API_KEY=your_openai_key
-
-# Blockchain Anchoring (optional)
-RPC_URL=https://sepolia.infura.io/v3/YOUR_PROJECT_ID
-CONTRACT_ADDRESS=0x...
-PRIVATE_KEY=0x...
-ETH_CHAIN_ID=11155111
-ETH_RECEIPT_TIMEOUT_SEC=180
-```
-
-## 🛠️ Development
-
-- **Backend**: Python 3.8+, FastAPI
-- **Frontend**: Vanilla JavaScript (Manifest v3)
-- **Database**: SQLite
-- **Testing**: pytest, pytest-asyncio
-
-For detailed development information, see `docs/README.md`.
-
-## 📝 License
-
-See repository LICENSE file for details.
-
-## 🤝 Contributing
-
-1. Create a feature branch
-2. Make your changes
-3. Run tests to verify
-4. Submit a pull request
-
----
-
-**Last Updated**: April 23, 2026
+Built for a hackathon by kart747, PranamB21, LnAigal and Yashwin69.
